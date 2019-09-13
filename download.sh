@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 ############################################################## 
 # This script is used to download resources for MT-DNN experiments
-############################################################## 
+##############################################################
+set -x
+set -e
+
 BERT_DIR=$(pwd)/mt_dnn_models
 echo "Create a folder BERT_DIR"
 mkdir ${BERT_DIR}

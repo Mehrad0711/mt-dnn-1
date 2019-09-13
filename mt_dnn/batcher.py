@@ -52,11 +52,13 @@ class BatchGen:
         return [data[i:i + batch_size] for i in range(0, len(data), batch_size)]
 
     @staticmethod
-    def load(path, is_train=True, maxlen=128, factor=1.0, pairwise=False):
+    def load(path, is_train=True, maxlen=128, factor=1.0, pairwise=False, subsample=1.0):
         with open(path, 'r', encoding='utf-8') as reader:
             data = []
             cnt = 0
-            for line in reader:
+            all_lines = reader.readlines()
+            data_size = len(all_lines)
+            for line in all_lines:
                 sample = json.loads(line)
                 sample['factor'] = factor
                 cnt += 1
@@ -66,6 +68,8 @@ class BatchGen:
                     if (not pairwise) and (len(sample['token_id']) > maxlen):
                         continue
                 data.append(sample)
+                if cnt >= data_size * subsample:
+                    break
             print('Loaded {} samples out of {}'.format(len(data), cnt))
             return data
 

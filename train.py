@@ -16,6 +16,15 @@ from data_utils.task_def import TaskType
 from mt_dnn.batcher import BatchGen
 from mt_dnn.model import MTDNNModel
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    elif v.lower() in ['true', '1']:
+        return True
+    elif v.lower() in ['false', '0']:
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Unable to parse the argument')
 
 def model_config(parser):
     parser.add_argument('--update_bert_opt', default=0, type=int)
@@ -55,11 +64,12 @@ def data_config(parser):
     parser.add_argument('--task_def', type=str, default="experiments/glue/glue_task_def.yml")
     parser.add_argument('--train_datasets', default='mnli')
     parser.add_argument('--test_datasets', default='mnli_mismatched,mnli_matched')
+    parser.add_argument('--frac', type=float, default=1.0, help='fraction of train dataset to use during training (useful for toy experiments)')
     return parser
 
 
 def train_config(parser):
-    parser.add_argument('--cuda', type=bool, default=torch.cuda.is_available(),
+    parser.add_argument('--cuda', type=str2bool, default=torch.cuda.is_available(),
                         help='whether to use GPU acceleration.')
     parser.add_argument('--log_per_updates', type=int, default=500)
     parser.add_argument('--save_per_updates', type=int, default=10000)
@@ -186,7 +196,7 @@ def main():
 
         train_path = os.path.join(data_dir, '{}_train.json'.format(dataset))
         logger.info('Loading {} as task {}'.format(train_path, task_id))
-        train_data = BatchGen(BatchGen.load(train_path, True, pairwise=pw_task, maxlen=args.max_seq_len),
+        train_data = BatchGen(BatchGen.load(train_path, True, pairwise=pw_task, maxlen=args.max_seq_len, subsample=args.frac),
                               batch_size=batch_size,
                               dropout_w=args.dropout_w,
                               gpu=args.cuda,
@@ -219,7 +229,7 @@ def main():
         dev_path = os.path.join(data_dir, '{}_dev.json'.format(dataset))
         dev_data = None
         if os.path.exists(dev_path):
-            dev_data = BatchGen(BatchGen.load(dev_path, False, pairwise=pw_task, maxlen=args.max_seq_len),
+            dev_data = BatchGen(BatchGen.load(dev_path, False, pairwise=pw_task, maxlen=args.max_seq_len, subsample=args.frac),
                                 batch_size=args.batch_size_eval,
                                 gpu=args.cuda, is_train=False,
                                 task_id=task_id,
@@ -232,7 +242,7 @@ def main():
         test_path = os.path.join(data_dir, '{}_test.json'.format(dataset))
         test_data = None
         if os.path.exists(test_path):
-            test_data = BatchGen(BatchGen.load(test_path, False, pairwise=pw_task, maxlen=args.max_seq_len),
+            test_data = BatchGen(BatchGen.load(test_path, False, pairwise=pw_task, maxlen=args.max_seq_len, subsample=args.frac),
                                  batch_size=args.batch_size_eval,
                                  gpu=args.cuda, is_train=False,
                                  task_id=task_id,
